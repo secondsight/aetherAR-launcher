@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2009 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:launcher="http://schemas.android.com/apk/res/com.aetherar.launcher"
+    android:key="ui_3d"
+    android:title="@string/preferences_interface_3d_title">
+
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_z_scale"
+        android:title="@string/preferences_interface_3d_z_scale_title"
+        android:summary="@string/preferences_interface_3d_z_scale_summary"
+        launcher:min="30"
+        launcher:max="100"
+        android:defaultValue="@integer/effect_3d_z_scale" />
+    
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_distance"
+        android:title="@string/preferences_interface_3d_cam_distance_title"
+        android:summary="@string/preferences_interface_3d_cam_distance_summary"
+        launcher:min="0"
+        launcher:max="100"
+        android:defaultValue="@integer/effect_3d_cam_distance" />
+    
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_sensor_reset_acceleration"
+        android:title="@string/preferences_interface_3d_sensor_reset_acceleration_title"
+        android:summary="@string/preferences_interface_3d_sensor_reset_acceleration_summary"
+        launcher:min="20"
+        launcher:max="100"
+        android:defaultValue="@integer/effect_3d_sensor_reset_acceleration" />
+    
+    <ListPreference android:key="ui_3d_shader_type"
+        android:title="@string/preferences_interface_3d_set_shader_title"
+        android:summary="@string/preferences_interface_3d_set_shader_summay"
+        android:entries="@array/preferences_interface_3d_distortion_entries"
+        android:entryValues="@array/preferences_interface_3d_distortion_values"
+        android:defaultValue="@integer/effect_3d_shader" />  
+        
+    <CheckBoxPreference android:key="ui_3d_show_fps"
+            android:title="@string/preferences_interface_3d_show_fps"
+            android:defaultValue="true" />
+    
+</PreferenceScreen>
