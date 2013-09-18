@@ -1,13 +1,15 @@
 package com.cyanogenmod.trebuchet.widget;
 
-import com.cyanogenmod.trebuchet.AppsGLSurfaceView;
-
 import android.content.Context;
+import android.graphics.Point;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+
+import com.cyanogenmod.trebuchet.AppsGLSurfaceView;
 
 public class MirrorViewHelper {
     
@@ -98,9 +100,12 @@ public class MirrorViewHelper {
         MirrorSourceFrameLayout mirrorSource = new MirrorSourceFrameLayout(context);
 //        AppsGLSurfaceView mirrorView = new AppsGLSurfaceView(context, null);
         
+        MirrorGLConfig config = new MirrorGLConfig(context);
+        Point size = config.getPaneSize();        
         LinearLayout srcLayout = new LinearLayout(context);
         srcLayout.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams srcParams = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT); 
+//        LinearLayout.LayoutParams srcParams = new LinearLayout.LayoutParams(size.x, size.y); 
         srcParams.weight = 1f;
         srcLayout.addView(mirrorSource, srcParams);
         srcLayout.addView(new View(context), srcParams); //view place holder.
@@ -112,8 +117,14 @@ public class MirrorViewHelper {
         
 
         layout.setLayoutParams(sourceView.getLayoutParams());
-        mirrorSource.addView(sourceView);
+        
 
+        float scale = config.getPaneScale();
+        MirrorSourceFrameLayout.LayoutParams origParams = new MirrorSourceFrameLayout.LayoutParams(size.x, size.y); 
+        origParams.gravity = Gravity.CENTER;
+        sourceView.setScaleX(scale);
+        sourceView.setScaleY(scale);
+        mirrorSource.addView(sourceView, origParams);
         return layout;
     }
     

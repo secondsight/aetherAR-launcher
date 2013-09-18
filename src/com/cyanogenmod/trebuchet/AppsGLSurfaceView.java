@@ -19,6 +19,10 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.Camera;
@@ -181,7 +185,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mConfig = new MirrorGLConfig(context);
         
         // register gyroscope listener
-        mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        if (mConfig.isSensorEnabled()) {
+        	mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        }
         
         final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
@@ -414,13 +420,45 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             GLES20.glBindTexture(GL10.GL_TEXTURE_2D, 0);
         }
     }
-    
+
+    private static final long SCALE_DELAY_TIME = 100;
+    private Bitmap mScaledRequestedBmp = null;
+    private Bitmap mPrevRequetedBmp    = null;
+    private long   mPrevRequetTime     = 0;
     private void drawIcons(GL10 gl) {
         Bitmap bmp = getRequestedBitmap();
-        
-        createIconTexture(gl, bmp);
-        
-        releaseBitmap(bmp);
+
+        Bitmap iconBmp = bmp;
+        if (iconBmp != null) {
+            int sw = iconBmp.getWidth() / 2;
+            int sh = iconBmp.getHeight() / 2;
+            if (mScaledRequestedBmp == null || mScaledRequestedBmp.isRecycled()
+                    || mScaledRequestedBmp.getWidth() < sw
+                    || mScaledRequestedBmp.getHeight() < sh) {
+                if (mScaledRequestedBmp != null) {
+                    mScaledRequestedBmp.recycle();
+                }
+                mScaledRequestedBmp = Bitmap.createScaledBitmap(iconBmp, sw, sh, false);
+            } else {
+                Canvas canvas = new Canvas(mScaledRequestedBmp);
+                canvas.scale(0.5f, 0.5f, 0, 0);
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                canvas.drawBitmap(iconBmp, 0, 0, null);
+            }
+            iconBmp = mScaledRequestedBmp;
+            mPrevRequetTime = System.currentTimeMillis();
+        } else {
+            if (System.currentTimeMillis() - mPrevRequetTime > SCALE_DELAY_TIME) {
+                iconBmp = mPrevRequetedBmp;
+            }
+        }
+        createIconTexture(gl, iconBmp);
+
+//        releaseBitmap(bmp);
+        if (iconBmp != null) {
+            releaseBitmap(mPrevRequetedBmp);
+            mPrevRequetedBmp = bmp;            
+        }
         
         if (mTick > 20) mInactive = false;
         
@@ -550,6 +588,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         }
     }
 
+    private int mUploadedImageWidth = 0;
     private void createIconTexture(GL10 gl, Bitmap bitmap) {
         if (bitmap == null) {
             return;
@@ -561,8 +600,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             mIconTid = tids[0];
         }
         
+        int w = bitmap.getWidth();
         gl.glBindTexture(GL11.GL_TEXTURE_2D, mIconTid);
-        if (mUploadFull) {
+        if (mUploadFull || mUploadedImageWidth != w) {
             GLUtils.texImage2D(GL11.GL_TEXTURE_2D, 0, bitmap, 0);
             mUploadFull = false;
         } else {
@@ -570,6 +610,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             int type = GLUtils.getType(bitmap);
             GLUtils.texSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
         }
+        mUploadedImageWidth = w;
         gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER,
                 mConfig.isHighEnd() ? GL10.GL_LINEAR : GL10.GL_NEAREST);
         gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER,
@@ -596,7 +637,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             Log.d(TAG, "Creating bitmap w = " + w + " glw = " + glw + " h = " + glh);
             mScaleU = w / (float)glw;
             mScaleV = h / (float)glh;
-            bmp = Bitmap.createBitmap(glw / 2, glh / 2, Config.ARGB_8888);
+            bmp = Bitmap.createBitmap(glw, glh, Config.ARGB_8888);
             
             mRenderLock.lock();
             try {
@@ -623,7 +664,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         synchronized(mIdleQueue) {
             if(mIdleQueue.size() > MAX_REQUEST) {
+                Log.d(TAG, "too many bmp in pool: " + mIdleQueue.size());
                 bmp.recycle();
+                return;
             }
             mIdleQueue.offer(bmp);
         }
@@ -641,6 +684,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     }
     
     private Bitmap getRequestedBitmap() {
+        Bitmap bmp = null;
         synchronized(mReqQueue) {
             return mReqQueue.poll();
         }

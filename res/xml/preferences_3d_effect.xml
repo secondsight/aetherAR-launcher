@@ -33,13 +33,31 @@
         launcher:max="100"
         android:defaultValue="@integer/effect_3d_cam_distance" />
     
+    <CheckBoxPreference android:key="ui_3d_enable_sensor"
+            android:title="@string/preferences_interface_3d_enable_sensor"
+            android:defaultValue="true"/>			
     <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_sensor_reset_acceleration"
         android:title="@string/preferences_interface_3d_sensor_reset_acceleration_title"
         android:summary="@string/preferences_interface_3d_sensor_reset_acceleration_summary"
         launcher:min="20"
         launcher:max="100"
-        android:defaultValue="@integer/effect_3d_sensor_reset_acceleration" />
-    
+        android:defaultValue="@integer/effect_3d_sensor_reset_acceleration" 
+        android:dependency="ui_3d_enable_sensor"/>
+    	
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_pane_width"
+        android:title="@string/preferences_interface_3d_pane_width"
+        android:summary="@string/preferences_interface_3d_pane_width_summary"
+        launcher:min="65"
+        launcher:max="100"
+        android:defaultValue="100" />
+	
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_pane_height"
+        android:title="@string/preferences_interface_3d_pane_height"
+        android:summary="@string/preferences_interface_3d_pane_height_summary"
+        launcher:min="65"
+        launcher:max="100"
+        android:defaultValue="100" />
+	
     <ListPreference android:key="ui_3d_shader_type"
         android:title="@string/preferences_interface_3d_set_shader_title"
         android:summary="@string/preferences_interface_3d_set_shader_summay"

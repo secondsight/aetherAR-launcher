@@ -19,6 +19,8 @@ import com.cyanogenmod.trebuchet.widget.IMirrorView.MirrorViewCallback;
 
 public class MirrorSourceFrameLayout extends FrameLayout implements MirrorViewCallback {
 
+    private static final boolean DEBUG_LAYOUT = false;
+    
     private boolean mIsMirrorViewActived;
     private IMirrorView mMirrorView;
     
@@ -67,6 +69,11 @@ public class MirrorSourceFrameLayout extends FrameLayout implements MirrorViewCa
 
     @Override
     public void dispatchDraw(Canvas canvas) {
+        if (DEBUG_LAYOUT && mMirrorView != null) {
+            ((View)mMirrorView).setVisibility(View.GONE);
+            mMirrorView = null;
+            setBackgroundColor(0xFFFF00FF);
+        }
         if (mMirrorView == null) {
             super.dispatchDraw(canvas);
             return;
@@ -82,7 +89,7 @@ public class MirrorSourceFrameLayout extends FrameLayout implements MirrorViewCa
             bufCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             bufCanvas.save();
             bufCanvas.translate(-getScrollX(), -getScrollY()); 
-            bufCanvas.scale(0.5f, 0.5f);
+//            bufCanvas.scale(0.5f, 0.5f);
             super.dispatchDraw(bufCanvas);  
             bufCanvas.restore();
         }

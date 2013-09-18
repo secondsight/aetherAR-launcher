@@ -280,10 +280,16 @@ s -->
     <string name="preferences_interface_3d_z_scale_summary">Change camera Z distance</string>
     <string name="preferences_interface_3d_cam_distance_title">Camera rotation</string>
     <string name="preferences_interface_3d_cam_distance_summary">Change camera rotation </string>    
+	<string name="preferences_interface_3d_enable_sensor">Enable Sensor</string>
     <string name="preferences_interface_3d_sensor_reset_acceleration_title">Sensor reset acceleration</string>
     <string name="preferences_interface_3d_sensor_reset_acceleration_summary">Sensor reset acceleration</string>    
     <string name="preferences_interface_3d_set_shader_title">Distortion Type</string>
 	<string name="preferences_interface_3d_set_shader_summay">Change Distortion Type</string>	
     <string name="preferences_interface_3d_distortion_level">Distortion Level</string>
 	<string name="preferences_interface_3d_show_fps">Show FPS (Frame Per Second)</string>
+	
+    <string name="preferences_interface_3d_pane_width">Pane Width</string>
+    <string name="preferences_interface_3d_pane_width_summary">Change Pane Width</string>	
+    <string name="preferences_interface_3d_pane_height">Pane Height</string>
+    <string name="preferences_interface_3d_pane_height_summary">Change Pane Height</string>
 </resources>

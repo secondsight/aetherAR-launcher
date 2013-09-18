@@ -251,11 +251,26 @@ public final class PreferencesProvider {
             public static int getShaderType(int def) {
                 return Integer.parseInt(getString("ui_3d_shader_type", Integer.toString(def)));
             }     
+            public static boolean getEnableSensor(boolean def) {
+            	return getBoolean("ui_3d_enable_sensor", def);
+            }
             public static int getSensorResetAcceleration(int def) {
                 return Integer.parseInt(getString("ui_3d_sensor_reset_acceleration", Integer.toString(def)));                
             }
+            public static int getPaneWidth(int def) {
+            	return getInt("ui_3d_pane_width", def);
+            }
+            public static int getPaneHeight(int def) {
+            	return getInt("ui_3d_pane_height", def);
+            }
             public static boolean getShowFPS(boolean def) {
             	return getBoolean("ui_3d_show_fps", def);
+            }
+            public static boolean getUseCamera(boolean def) {
+                return getBoolean("ui_3d_use_camera", def);
+            }
+            public static void setUseCamera(Context ctx, boolean value) {
+                setBoolean(ctx, "ui_3d_use_camera", value);
             }
         }
 

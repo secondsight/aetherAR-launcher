@@ -1,10 +1,12 @@
 package com.cyanogenmod.trebuchet.widget;
 
-import com.aetherar.launcher.R;
-import com.cyanogenmod.trebuchet.preference.PreferencesProvider;
-
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Point;
+import android.util.DisplayMetrics;
+
+import com.aetherar.launcher.R;
+import com.cyanogenmod.trebuchet.preference.PreferencesProvider;
 
 public class MirrorGLConfig {
 
@@ -28,6 +30,10 @@ public class MirrorGLConfig {
     public float getCameraRotation() {
         return PreferencesProvider.Interface.ThreeD.getZDistance(
                 mResources.getInteger(R.integer.effect_3d_cam_distance)) / 10f;
+    }
+    
+    public boolean isSensorEnabled() {
+    	return PreferencesProvider.Interface.ThreeD.getEnableSensor(true);
     }
     
     public float getSensorResetAcceleration() {
@@ -56,6 +62,32 @@ public class MirrorGLConfig {
 //        String pn = android.os.Build.PRODUCT;
 //        String model = android.os.Build.MODEL;
         return false;//pn.startsWith("j");
+    }
+
+    public void setUseCamera(boolean use) {
+        PreferencesProvider.Interface.ThreeD.getUseCamera(true);
+    }
+    
+    public boolean useCamera() {
+        return PreferencesProvider.Interface.ThreeD.getUseCamera(true);
+    }
+    
+    private float mPaneScale = 1f;
+    public Point getPaneSize() {
+    	DisplayMetrics metrics = mResources.getDisplayMetrics();
+    	int w = metrics.widthPixels / 2;
+    	int h = metrics.heightPixels;    	
+    	int sw = w * PreferencesProvider.Interface.ThreeD.getPaneWidth(100) / 100;
+    	int sh = h * PreferencesProvider.Interface.ThreeD.getPaneHeight(100) / 100;
+    	
+    	mPaneScale = sw / (float)w;
+    	sw = w;
+    	sh = (int)(sh / mPaneScale);    	
+    	return new Point(sw, sh); 
+    }
+    
+    public float getPaneScale() {
+        return mPaneScale;
     }
     
 }
