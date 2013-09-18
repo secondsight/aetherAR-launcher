@@ -20,7 +20,7 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.aetherar.launcher"
-    android:versionName="@string/application_version">
+    android:versionName="1.0.4978.943" android:versionCode="49780943">
 
     <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="17" />
 	<uses-feature android:glEsVersion="0x00020000" /> 
