@@ -108,7 +108,8 @@
 <!-- 3D Effect -->
     <integer name="effect_3d_z_scale">80</integer>
     <integer name="effect_3d_cam_distance">50</integer>
-    <integer name="effect_3d_sensor_reset_acceleration">50</integer>
+    <integer name="effect_3d_cam_position">10</integer>
+    <integer name="effect_3d_sensor_reset_acceleration">20</integer>
     <integer name="effect_3d_shader">0</integer>
     <integer name="effect_3d_barrel_level">50</integer>
     <integer name="effect_3d_oculus_level">100</integer>

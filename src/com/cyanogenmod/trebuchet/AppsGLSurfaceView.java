@@ -8,6 +8,8 @@ import com.dwtech.android.launcher3d.HCamera;
 import com.dwtech.android.launcher3d.HMath;
 import com.dwtech.android.launcher3d.HMatrix;
 import com.dwtech.android.launcher3d.HVector;
+import com.dwtech.android.launcher3d.SensorFusion;
+import com.dwtech.android.launcher3d.SensorFusion2;
 import com.dwtech.android.launcher3d.ShaderManager;
 import com.dwtech.android.launcher3d.Util;
 
@@ -15,22 +17,16 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -55,7 +51,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
-public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirrorView, SensorEventListener {
+public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirrorView {
 
     private static final String TAG = AppsGLSurfaceView.class.getSimpleName();
     
@@ -82,8 +78,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private int mMVPMatrixHandle;
     private int mPositionHandle;
     private int mTexHandle;
-    private int mScaleUHandle;
-    private int mScaleVHandle;
     private int mBarrelLevelHandle;
     private float mBarrelLevel = 0.5f;
     private float mScaleU = 1;
@@ -98,7 +92,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private int mORTexHandle;
     private int mORMVPMatrixHandle;
     private int mORHmdWarpHandle;
-    private Bitmap mORTex;
     private Bitmap mORBitmap;
     private int mORTid;
     
@@ -116,6 +109,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     
     private float mZScale = 1f;
     private float mCamRotate = 3f;
+    private float mCamPosition;
     
     private FloatBuffer mVertexBuffer;
     private FloatBuffer mCoordBuffer;
@@ -128,21 +122,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private int mSurfaceWidth = 0;
     private int mSurfaceHeight = 0;
     private MirrorViewCallback mCallback;
-    
-    protected float[] mAcceleratorData = new float[3];
-    protected float[] mSensorMagData = new float[3];
-    
-    protected float[] mRotationMatrix = new float[16];
-    protected float[] mFinalRotationMatrix = new float[16];
-    protected float[] mInclinationMatrix = new float[16];
-    protected float[] mFinalInclinationMatrix = new float[16];
-    protected float[] mDefOrientation = new float[3];
-    protected float[] mDefOrientationFiltered = new float[3];
-    protected float[] mOrientation = new float[3];
-    protected float[] mQuaternion = new float[4];
-    
-    protected boolean mHasSensor;
-    protected boolean mHasGravity;
     
     protected AtomicReference<Float> mAzimuth = new AtomicReference<Float>();
     protected AtomicReference<Float> mInclination = new AtomicReference<Float>();
@@ -161,7 +140,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     
     private int mScreenRotation;
     
-    private SensorManager mSensorManager;
     private boolean mInactive;
     
     public static final int PREFERENCE_SDR_BARREL = 0;
@@ -175,6 +153,8 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private boolean mShouldOpenCamera;
     private boolean mTouchEventReady;
     
+    private SensorFusion2 mSensorFusion;
+    
     public AppsGLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         
@@ -186,7 +166,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         // register gyroscope listener
         if (mConfig.isSensorEnabled()) {
-        	mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        	mSensorFusion = new SensorFusion2(context);
         }
         
         final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -199,10 +179,11 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
 
         mZScale = mConfig.getZScale();
         mCamRotate = mConfig.getCameraRotation();
+        mCamPosition = mConfig.getCameraPosition();
         mPreferenceShader = mConfig.getShaderType();
         setBarrelDistortLevel(mConfig.getBarrelDistortLevel());
         int ordis = mConfig.getORDistortLevel();
-        setORDistortLevel(ordis);
+        setORDistortLevel(100);
         
         if (supportsEs2)
         {
@@ -228,6 +209,17 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
 
     @Override
     public void onDrawFrame(GL10 gl) {
+
+        int o = ((Activity) mContext).getWindowManager().getDefaultDisplay().getRotation();
+        if (mScreenRotation != o) {
+            mScreenRotation = o;
+            mSensorFusion.setScreenRotation(mScreenRotation);
+            resetSenorInitialValues();
+        }
+        
+        setAzimuth(mSensorFusion.getAzimuth());
+        setInclination(mSensorFusion.getInclination());
+        
         mRenderLock.lock();
         try {
         	if (mShouldOpenCamera) {
@@ -281,7 +273,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     @Override
     public void onAppear() {
         Log.d(TAG, "onAppear");
-        registerSensor();
+        if (mConfig.isSensorEnabled()) {
+            mSensorFusion.start();
+        }
         mUploadFull = true;
         mTick = 0;
         mAzimuth = new AtomicReference<Float>();
@@ -294,7 +288,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         Log.d(TAG, "onDisappear");
         closeCamera();
         clearDrawRequests();
-        unregisterSensor();
+        mSensorFusion.stop();
         mInactive = true;
         mTick = 0;
         mConfig.putZScale(mZScale);
@@ -324,7 +318,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         gl.glEnable(GL11.GL_BLEND);
         gl.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         
-        if (DEBUG_FPS){
+        if (DEBUG_FPS || mConfig.isSensorEnabled()){
             setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
         } else {
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -338,8 +332,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mSdrBarrel, "u_MVPMatrix");
         mPositionHandle = GLES20.glGetAttribLocation(mSdrBarrel, "a_Position");
         mTexHandle = GLES20.glGetAttribLocation(mSdrBarrel, "a_Texcoord");
-        mScaleUHandle = GLES20.glGetUniformLocation(mSdrBarrel, "uScaleU");
-        mScaleVHandle = GLES20.glGetUniformLocation(mSdrBarrel, "uScaleV");
         mBarrelLevelHandle = GLES20.glGetUniformLocation(mSdrBarrel, "uBarrelLevel");
         
         mSdrOculusRift = ShaderManager.createShader(ShaderManager.SDR_OCULUS_RIFT);
@@ -536,9 +528,11 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         // Now draw icons
         Matrix.translateM(mTempMatrix, 0, 0, 0, -1f);
-        Matrix.rotateM(mTempMatrix, 0, mCamRotate, 0, 1, 0);
+        Matrix.rotateM(mTempMatrix, 0, -mCamRotate, 0, 1, 0);
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
         
+        mCam.setPosition(-mCamPosition, 0, 0);
+        mCam.update();
         float[] camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
@@ -562,8 +556,12 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         gl.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         
         Matrix.translateM(mTempMatrix, 0, 0, 0, -1f);
-        Matrix.rotateM(mTempMatrix, 0, -mCamRotate, 0, 1, 0);
+        Matrix.rotateM(mTempMatrix, 0, mCamRotate, 0, 1, 0);
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
+        
+        mCam.setPosition(mCamPosition, 0, 0);
+        mCam.update();
+        camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
         GLES20.glUniformMatrix4fv(mvpHnd, 1, false, mMVPMatrix, 0);
@@ -684,7 +682,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     }
     
     private Bitmap getRequestedBitmap() {
-        Bitmap bmp = null;
         synchronized(mReqQueue) {
             return mReqQueue.poll();
         }
@@ -760,76 +757,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         return false;
     } 
     
-    @Override
-    public void onSensorChanged(SensorEvent event)
-    {
-        int o = ((Activity) mContext).getWindowManager().getDefaultDisplay().getRotation();
-        if (mScreenRotation != o) {
-            mScreenRotation = o;
-            resetSenorInitialValues();
-        }
-        
-        mHasSensor = true;
-        
-        float[] values = event.values;
-        switch(event.sensor.getType())
-        {
-            case Sensor.TYPE_GRAVITY:
-                mAcceleratorData = lowPass(values.clone(), mAcceleratorData);
-                mHasGravity = true;
-                break;
-                
-            case Sensor.TYPE_ACCELEROMETER:
-                if (mHasGravity) {
-                    break;
-                }
-                mAcceleratorData = lowPass(values.clone(), mAcceleratorData);
-                break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
-                mSensorMagData = lowPass(values.clone(), mSensorMagData);
-                break;
-            case Sensor.TYPE_GYROSCOPE:
-            {
-                SensorManager.getRotationMatrix(mRotationMatrix, mInclinationMatrix, mAcceleratorData, mSensorMagData);
-                if (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    SensorManager.remapCoordinateSystem(mRotationMatrix,
-                            SensorManager.AXIS_MINUS_Y,
-                            SensorManager.AXIS_X, mFinalRotationMatrix);
-                    SensorManager.remapCoordinateSystem(mInclinationMatrix,
-                            SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, mFinalInclinationMatrix);
-                } else {
-                    System.arraycopy(mRotationMatrix, 0, mFinalRotationMatrix, 0, mRotationMatrix.length);
-                    System.arraycopy(mInclinationMatrix, 0, mFinalInclinationMatrix, 0, mInclinationMatrix.length);
-                }
-                SensorManager.getOrientation(mFinalRotationMatrix, mOrientation);
-                SensorManager.getOrientation(mRotationMatrix, mDefOrientation);
-                
-                // inclination
-                setInclination(mOrientation[1]);
-            	
-            	// azimuth
-            	mDefOrientation[0] += Math.PI; // 0 ~ 2PI
-            	
-            	mDefOrientationFiltered = lowPass(mDefOrientation.clone(), mDefOrientationFiltered);
-            	
-            	setAzimuth(mDefOrientationFiltered[0]);
-            }
-                break;
-                
-            case Sensor.TYPE_ORIENTATION:
-            {
-                setInclination((float)(values[2] * Math.PI / 180));
-                setAzimuth((float)(values[0] * Math.PI / 180));
-            }
-                break;
-        }
-        
-        this.requestRender();
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
     
     private void setInclination(float inclination) {
         if (mScreenRotation == Surface.ROTATION_270) {
@@ -837,7 +764,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         }
         
         if (mInitInclinationState == STATE_INVALID) {
-            if (mTick >= 10) {
+            if (mTick >= 30) {
                 mInitInclinationState = STATE_IGNORE;
             }
         } else if (mInitInclinationState == STATE_IGNORE) { // Average next 10?
@@ -852,7 +779,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     
     private void setAzimuth(float azimuth) {
         if (mInitAzimuthState == STATE_INVALID) {
-            if (mTick >= 10) {
+            if (mTick >= 30) {
                 mInitAzimuthState = STATE_IGNORE;
             }
         } else if (mInitAzimuthState == STATE_IGNORE) { // Average next 10?
@@ -893,42 +820,42 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         float max = (float)HMath.clampBetweenZeroAnd2PI(mInitAzimuth + mAzimuthRange);
         float clampedAzimuth = delAzimuth;
         
-        if (max > min) { // Normal case
-        	float absAngleMin = (float)HMath.getSmallerAngle(azimuth, min);
-        	float absAngleMax = (float)HMath.getSmallerAngle(azimuth, max);
-        	float minRefAzimuth = (float)((azimuth > max && absAngleMin < absAngleMax) ? azimuth - HMath.PI2 : azimuth);
-        	float maxRefAzimuth = (float)((azimuth < min && absAngleMax < absAngleMin) ? azimuth + HMath.PI2 : azimuth);
-        	if (minRefAzimuth < min && absAngleMin < absAngleMax) {
-        		mInitAzimuth -= absAngleMin; 
-//        		Log.d(TAG, "A " + mInitAzimuth + "; min/max = " + min + ", " + max);
-        	} else if (maxRefAzimuth > max && absAngleMax < absAngleMin) {
-        		mInitAzimuth += absAngleMax; 
-//        		Log.d(TAG, "B " + mInitAzimuth + "; min/max = " + min + ", " + max);
-        	}
-        } else if (azimuth > max && azimuth < min){
-        	if (azimuth > max && azimuth - max < min - azimuth) {
-        		mInitAzimuth += azimuth - max; 
-//        		Log.d(TAG, "C " + mInitAzimuth + "; min/max = " + min + ", " + max);
-        	} else if (azimuth < min && azimuth - max > min - azimuth) {
-        		mInitAzimuth -= min - azimuth; 
-//        		Log.d(TAG, "D " + mInitAzimuth + "; min/max = " + min + ", " + max);
-        	} else {
-//        		Log.d(TAG, "E " + mInitAzimuth + "; min/max = " + min + ", " + max);
-        	}
-        }
+//        if (max > min) { // Normal case
+//        	float absAngleMin = (float)HMath.getSmallerAngle(azimuth, min);
+//        	float absAngleMax = (float)HMath.getSmallerAngle(azimuth, max);
+//        	float minRefAzimuth = (float)((azimuth > max && absAngleMin < absAngleMax) ? azimuth - HMath.PI2 : azimuth);
+//        	float maxRefAzimuth = (float)((azimuth < min && absAngleMax < absAngleMin) ? azimuth + HMath.PI2 : azimuth);
+//        	if (minRefAzimuth < min && absAngleMin < absAngleMax) {
+//        		mInitAzimuth -= absAngleMin; 
+////        		Log.d(TAG, "A " + mInitAzimuth + "; min/max = " + min + ", " + max);
+//        	} else if (maxRefAzimuth > max && absAngleMax < absAngleMin) {
+//        		mInitAzimuth += absAngleMax; 
+////        		Log.d(TAG, "B " + mInitAzimuth + "; min/max = " + min + ", " + max);
+//        	}
+//        } else if (azimuth > max && azimuth < min){
+//        	if (azimuth > max && azimuth - max < min - azimuth) {
+//        		mInitAzimuth += azimuth - max; 
+////        		Log.d(TAG, "C " + mInitAzimuth + "; min/max = " + min + ", " + max);
+//        	} else if (azimuth < min && azimuth - max > min - azimuth) {
+//        		mInitAzimuth -= min - azimuth; 
+////        		Log.d(TAG, "D " + mInitAzimuth + "; min/max = " + min + ", " + max);
+//        	} else {
+////        		Log.d(TAG, "E " + mInitAzimuth + "; min/max = " + min + ", " + max);
+//        	}
+//        }
         
         // re-center azimuth
         double delta = HMath.getSmallerAngle(azimuth, mInitAzimuth);
         if (Math.abs(delta) < 0.01f) {
-        	mInitAzimuth = azimuth;
+//        	mInitAzimuth = azimuth;
         } else {
         	double step = delta * mConfig.getSensorResetAcceleration();
         	double attemp = Math.abs(HMath.getSmallerAngle(azimuth, HMath.clampBetweenZeroAnd2PI(mInitAzimuth + step)));
-        	if (attemp < delta) {
-    			mInitAzimuth += step;
-        	} else {
-                mInitAzimuth -= step;
-        	}
+//        	if (attemp < delta) {
+//    			mInitAzimuth += step;
+//        	} else {
+//                mInitAzimuth -= step;
+//        	}
         }
         mInitAzimuth = (float)HMath.clampBetweenZeroAnd2PI(mInitAzimuth);
         
@@ -940,15 +867,14 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         } else {
             double step = delta * mConfig.getSensorResetAcceleration();
             double attemp = Math.abs(HMath.getSmallerAngle(inclination, HMath.clampBetweenZeroAnd2PI(mInitInclination + step)));
-            if (attemp < delta) {
-                mInitInclination += step;
-            } else {
-                mInitInclination -= step;
-            }
+//            if (attemp < delta) {
+//                mInitInclination += step;
+//            } else {
+//                mInitInclination -= step;
+//            }
         }
         mInitInclination = (float)HMath.clampBetweenZeroAnd2PI(mInitInclination);
         
-//        Log.d("Lance", "a = " + azimuth + " ca = " + clampedAzimuth);
         if (mInitAzimuthState != STATE_INVALID) {
             lookat.rotate(HVector.BASICY, -clampedAzimuth);
         }
@@ -958,31 +884,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         mCam.setLookAt(lookat.x, lookat.y, lookat.z);
         mCam.setUp(0, 1, 0);
-        mCam.update();
-    }
-
-    private void registerSensor() {
-        if(mSensorManager != null){
-            mSensorManager.registerListener(this,
-                    mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY), SensorManager.SENSOR_DELAY_GAME);
-            mSensorManager.registerListener(this,
-                    mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-            mSensorManager.registerListener(this,
-                    mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
-            if(mConfig.useOrientationAPI()) {
-                mSensorManager.registerListener(this,
-                        mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_GAME);
-            } else {
-                mSensorManager.registerListener(this,
-                        mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
-            }
-        }
-    }
-    
-    private void unregisterSensor() {
-        if(mSensorManager != null){
-            mSensorManager.unregisterListener(this);
-        }
+//        mCam.update();
     }
     
     private void resetSenorInitialValues() {
@@ -990,7 +892,6 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mInitAzimuthState = STATE_INVALID;
         mInitInclinationState = STATE_INVALID;
         mTick = 0;
-        mDefOrientationFiltered = new float[3];
     }
     
     private int getPosHandle() {
@@ -1288,18 +1189,5 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-    
-    private float[] lowPass( float[] input, float[] output ) {
-        if ( output == null ) return input;     
-        for ( int i=0; i<input.length; i++ ) {
-            float delta = input[i] - output[i];
-            if (Math.abs(delta) > Math.PI) {
-                output[i] = input[i];
-            } else {
-                output[i] = output[i] + 0.25f * (delta);
-            }
-        }
-        return output;
     }
 }

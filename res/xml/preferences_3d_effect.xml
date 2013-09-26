@@ -33,6 +33,13 @@
         launcher:max="100"
         android:defaultValue="@integer/effect_3d_cam_distance" />
     
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_position"
+        android:title="@string/preferences_interface_3d_cam_position_title"
+        android:summary="@string/preferences_interface_3d_cam_position_summary"
+        launcher:min="0"
+        launcher:max="100"
+        android:defaultValue="@integer/effect_3d_cam_position" />
+    
     <CheckBoxPreference android:key="ui_3d_enable_sensor"
             android:title="@string/preferences_interface_3d_enable_sensor"
             android:defaultValue="true"/>			

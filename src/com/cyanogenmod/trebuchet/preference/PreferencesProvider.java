@@ -247,7 +247,10 @@ public final class PreferencesProvider {
             }
             public static int getZDistance(int def) {
                 return getInt("ui_3d_cam_distance", def);
-            }           
+            } 
+            public static int getCameraPosition(int def) {
+                return getInt("ui_3d_cam_position", def);
+            }
             public static int getShaderType(int def) {
                 return Integer.parseInt(getString("ui_3d_shader_type", Integer.toString(def)));
             }     
@@ -255,7 +258,7 @@ public final class PreferencesProvider {
             	return getBoolean("ui_3d_enable_sensor", def);
             }
             public static int getSensorResetAcceleration(int def) {
-                return Integer.parseInt(getString("ui_3d_sensor_reset_acceleration", Integer.toString(def)));                
+                return getInt("ui_3d_sensor_reset_acceleration", def);                
             }
             public static int getPaneWidth(int def) {
             	return getInt("ui_3d_pane_width", def);

@@ -32,14 +32,18 @@ public class MirrorGLConfig {
                 mResources.getInteger(R.integer.effect_3d_cam_distance)) / 10f;
     }
     
+    public float getCameraPosition() {
+        return PreferencesProvider.Interface.ThreeD.getCameraPosition(
+                mResources.getInteger(R.integer.effect_3d_cam_position)) / 100f;
+    }
+    
     public boolean isSensorEnabled() {
     	return PreferencesProvider.Interface.ThreeD.getEnableSensor(true);
     }
     
     public float getSensorResetAcceleration() {
-    	float a = PreferencesProvider.Interface.ThreeD.getSensorResetAcceleration(
+    	return PreferencesProvider.Interface.ThreeD.getSensorResetAcceleration(
                 mResources.getInteger(R.integer.effect_3d_sensor_reset_acceleration));
-        return ((a) * 2 - 40) / 3000f;
     }
     
     public int getShaderType() {
@@ -57,12 +61,6 @@ public class MirrorGLConfig {
     public boolean isHighEnd() {
         return true;//mProductName.startsWith("mproject") || mProductName.startsWith("nakasi") || mProductName.startsWith("u0");
     }
-    
-    public boolean useOrientationAPI() {
-//        String pn = android.os.Build.PRODUCT;
-//        String model = android.os.Build.MODEL;
-        return false;//pn.startsWith("j");
-    }
 
     public void setUseCamera(boolean use) {
         PreferencesProvider.Interface.ThreeD.getUseCamera(true);
@@ -76,7 +74,7 @@ public class MirrorGLConfig {
     public Point getPaneSize() {
     	DisplayMetrics metrics = mResources.getDisplayMetrics();
     	int w = metrics.widthPixels / 2;
-    	int h = metrics.heightPixels;    	
+    	int h = metrics.heightPixels - getStatusBarHeight();    	
     	int sw = w * PreferencesProvider.Interface.ThreeD.getPaneWidth(100) / 100;
     	int sh = h * PreferencesProvider.Interface.ThreeD.getPaneHeight(100) / 100;
     	
@@ -85,6 +83,15 @@ public class MirrorGLConfig {
     	sh = (int)(sh / mPaneScale);    	
     	return new Point(sw, sh); 
     }
+    
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = mContext.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = mContext.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+  }
     
     public float getPaneScale() {
         return mPaneScale;
