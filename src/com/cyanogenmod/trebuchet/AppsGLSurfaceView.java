@@ -532,6 +532,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
         
         mCam.setPosition(-mCamPosition, 0, 0);
+        HVector l = mCam.getLookAt();
+        float lookatX = l.x;
+        mCam.setLookAt(lookatX - mCamPosition, l.y, l.z);
         mCam.update();
         float[] camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
@@ -560,6 +563,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
         
         mCam.setPosition(mCamPosition, 0, 0);
+        mCam.setLookAt(lookatX + mCamPosition, l.y, l.z);
         mCam.update();
         camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
@@ -884,7 +888,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         mCam.setLookAt(lookat.x, lookat.y, lookat.z);
         mCam.setUp(0, 1, 0);
-//        mCam.update();
+        mCam.update();
     }
     
     private void resetSenorInitialValues() {
