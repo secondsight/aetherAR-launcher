@@ -46,6 +46,14 @@ public class SeekBarDialogPreference extends DialogPreference implements SeekBar
         dialogType.recycle();
         seekBarType.recycle();
     }
+    
+    public void setMax(int max) {
+    	mMax = max;
+    }
+    
+    public void setMin(int min) {
+    	mMin = min;
+    }
 
     @Override
     protected View onCreateDialogView() {

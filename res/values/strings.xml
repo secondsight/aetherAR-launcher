@@ -278,10 +278,11 @@ s -->
     <string name="preferences_interface_3d_title">Heads Up Display</string>
     <string name="preferences_interface_3d_z_scale_title">Z distance</string>
     <string name="preferences_interface_3d_z_scale_summary">Change camera Z distance</string>
-    <string name="preferences_interface_3d_cam_distance_title">Camera rotation</string>
-    <string name="preferences_interface_3d_cam_distance_summary">Change camera rotation </string> 
-    <string name="preferences_interface_3d_cam_position_title">Camera position</string>
-    <string name="preferences_interface_3d_cam_position_summary">Change camera position </string>     
+    <string name="preferences_interface_3d_cam_rotation_title">Camera rotation</string>
+    <string name="preferences_interface_3d_cam_rotation_summary">Change camera rotation </string> 
+    <string name="preferences_interface_3d_cam_position_title">Camera distance</string>
+    <string name="preferences_interface_3d_cam_position_summary">Change camera distance </string>     
+    <string name="preferences_interface_3d_cam_fov_title">Camera Filed of View</string> 
 	<string name="preferences_interface_3d_enable_sensor">Enable Sensor</string>
     <string name="preferences_interface_3d_sensor_reset_acceleration_title">Sensor reset acceleration</string>
     <string name="preferences_interface_3d_sensor_reset_acceleration_summary">Sensor reset acceleration</string>    

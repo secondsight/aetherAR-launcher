@@ -26,19 +26,29 @@
         launcher:max="100"
         android:defaultValue="@integer/effect_3d_z_scale" />
     
-    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_distance"
-        android:title="@string/preferences_interface_3d_cam_distance_title"
-        android:summary="@string/preferences_interface_3d_cam_distance_summary"
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_rotation"
+        android:title="@string/preferences_interface_3d_cam_rotation_title"
+        android:summary="@string/preferences_interface_3d_cam_rotation_summary"
         launcher:min="0"
         launcher:max="100"
-        android:defaultValue="@integer/effect_3d_cam_distance" />
+        android:defaultValue="@integer/effect_3d_cam_rotation" />
     
     <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_position"
         android:title="@string/preferences_interface_3d_cam_position_title"
         android:summary="@string/preferences_interface_3d_cam_position_summary"
-        launcher:min="0"
-        launcher:max="100"
+        launcher:min="1"
+        launcher:max="11"
+        launcher:suffix="cm"
         android:defaultValue="@integer/effect_3d_cam_position" />
+    
+    
+    <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_fov"
+        android:title="@string/preferences_interface_3d_cam_fov_title"
+        launcher:min="30"
+        launcher:max="90"
+        launcher:suffix="°"
+        android:defaultValue="@integer/effect_3d_cam_fov" />
+    
     
     <CheckBoxPreference android:key="ui_3d_enable_sensor"
             android:title="@string/preferences_interface_3d_enable_sensor"

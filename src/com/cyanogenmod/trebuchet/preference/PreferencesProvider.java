@@ -238,18 +238,21 @@ public final class PreferencesProvider {
             }
         }
         
-        public static class ThreeD {
+        public static class Effect3D {
             public static int getZScale(int def) {
                 return getInt("ui_3d_z_scale", def);
             }        	
             public static void setZScale(int value) {
             	setInt("ui_3d_z_scale", value);            	
             }
-            public static int getZDistance(int def) {
-                return getInt("ui_3d_cam_distance", def);
+            public static int getCameraRotation(int def) {
+                return getInt("ui_3d_cam_rotation", def);
             } 
-            public static int getCameraPosition(int def) {
+            public static int getCameraDistance(int def) {
                 return getInt("ui_3d_cam_position", def);
+            }
+            public static int getCameraFOV(int def) {
+                return getInt("ui_3d_cam_fov", def);
             }
             public static int getShaderType(int def) {
                 return Integer.parseInt(getString("ui_3d_shader_type", Integer.toString(def)));

@@ -45,8 +45,8 @@ public class SensorFusion2 implements SensorEventListener {
     private float timestamp;
     private boolean initState = true;
     
-    public static final int TIME_CONSTANT = 16;
-    public static final float FILTER_COEFFICIENT = 0.98f;
+    public static final int TIME_CONSTANT = 10;
+    public static final float FILTER_COEFFICIENT = 0.94f;
     private Timer fuseTimer = new Timer();
     
     private int mScreenRotation;
@@ -58,7 +58,7 @@ public class SensorFusion2 implements SensorEventListener {
         
 
         fuseTimer.scheduleAtFixedRate(new calculateFusedOrientationTask(),
-                                      100, TIME_CONSTANT);
+                                      10, TIME_CONSTANT);
     }
     
     public float getAzimuth() {
@@ -113,7 +113,7 @@ public class SensorFusion2 implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
-            case Sensor.TYPE_ACCELEROMETER:
+            case Sensor.TYPE_GRAVITY:
                 // copy new accelerometer data into accel array and calculate orientation
                 System.arraycopy(event.values, 0, accel, 0, 3);
                 calculateAccMagOrientation();
@@ -273,9 +273,7 @@ public class SensorFusion2 implements SensorEventListener {
 
     class calculateFusedOrientationTask extends TimerTask {
         public void run() {
-        	int o = ((Activity) mContext).getWindowManager().getDefaultDisplay().getRotation();
-            setScreenRotation(o);
-            
+
             float oneMinusCoeff = 1.0f - FILTER_COEFFICIENT;
             
             /*

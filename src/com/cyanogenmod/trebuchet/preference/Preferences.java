@@ -24,6 +24,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +35,7 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.cyanogenmod.trebuchet.LauncherApplication;
+import com.dwtech.android.launcher3d.Util;
 import com.aetherar.launcher.R;
 
 import java.util.List;
@@ -123,8 +125,10 @@ public class Preferences extends PreferenceActivity
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preferences_3d_effect);
+            
+            SeekBarDialogPreference camPref = (SeekBarDialogPreference) findPreference("ui_3d_cam_position");
+            camPref.setMax((int)Util.getMaxScreenWidthInCM(getActivity().getResources()));
         }
-    	
     }
 
     public static class HomescreenFragment extends PreferenceFragment {

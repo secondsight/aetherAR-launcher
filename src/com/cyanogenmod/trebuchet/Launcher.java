@@ -1031,7 +1031,7 @@ public final class Launcher extends Activity
         if (mMirrorHelper != null) {
         	mTVFPS = (TextView)findViewById(R.id.tv_fps);
             mMirrorHelper.mirror(mLauncherView);
-            boolean showFPS = PreferencesProvider.Interface.ThreeD.getShowFPS(true);
+            boolean showFPS = PreferencesProvider.Interface.Effect3D.getShowFPS(true);
             mTVFPS.setVisibility(showFPS ? View.VISIBLE : View.GONE);
             mHandler.sendEmptyMessageDelayed(MSG_UPDATE_FPS, 1000);
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {

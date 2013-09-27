@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
+
 public class Util {
     public static int nextPowerOf2(int n)
     {
@@ -70,5 +73,15 @@ public class Util {
         if (val.compareTo(min) < 0) return min;
         else if(val.compareTo(max) > 0) return max;
         else return val;
+    }
+    
+    public static float getMaxScreenWidthInCM(Resources res) {
+    	DisplayMetrics metrics = res.getDisplayMetrics();
+    	int w = metrics.widthPixels;
+    	int h = metrics.heightPixels;
+    	w = Math.max(w, h);
+    	int dpi = metrics.densityDpi;
+    	int inchSize = w / dpi;
+    	return inchSize * 2.54f;
     }
 }
