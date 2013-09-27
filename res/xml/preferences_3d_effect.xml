@@ -36,7 +36,7 @@
     <com.cyanogenmod.trebuchet.preference.SeekBarDialogPreference android:key="ui_3d_cam_position"
         android:title="@string/preferences_interface_3d_cam_position_title"
         android:summary="@string/preferences_interface_3d_cam_position_summary"
-        launcher:min="10"
+        launcher:min="0"
         launcher:max="110"
         launcher:suffix="mm"
         android:defaultValue="@integer/effect_3d_cam_position" />
