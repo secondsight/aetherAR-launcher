@@ -154,6 +154,8 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private boolean mTouchEventReady;
     
     private SensorFusion2 mSensorFusion;
+    private float mFOV = 45;
+    private float mDefZ = (float)(- 1 / Math.tan(mFOV/2 * Math.PI / 180));
     
     public AppsGLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -180,6 +182,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mZScale = mConfig.getZScale();
         mCamRotate = mConfig.getCameraRotation();
         mCamPosition = mConfig.getCameraPosition();
+        mFOV = mConfig.getCameraFOV();
         mPreferenceShader = mConfig.getShaderType();
         setBarrelDistortLevel(mConfig.getBarrelDistortLevel());
         int ordis = mConfig.getORDistortLevel();
@@ -255,7 +258,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         
         gl.glViewport(0, 0, width, height);
         
-        Util.glhPerspectivef(mProjectionMatrix, 90, width/2/(float)height, 0.1f, 1000);
+        Util.glhPerspectivef(mProjectionMatrix, mFOV, width/2/(float)height, 0.1f, 1000);
         
         mInitAzimuthState = STATE_INVALID;
         mInitInclinationState = STATE_INVALID;
@@ -527,7 +530,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         gl.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         
         // Now draw icons
-        Matrix.translateM(mTempMatrix, 0, 0, 0, -1f);
+        Matrix.translateM(mTempMatrix, 0, 0, 0, mDefZ);
         Matrix.rotateM(mTempMatrix, 0, -mCamRotate, 0, 1, 0);
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
         
@@ -558,7 +561,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         GLES20.glUniform1f(locScale, 0.08f);
         gl.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         
-        Matrix.translateM(mTempMatrix, 0, 0, 0, -1f);
+        Matrix.translateM(mTempMatrix, 0, 0, 0, mDefZ);
         Matrix.rotateM(mTempMatrix, 0, mCamRotate, 0, 1, 0);
         Matrix.scaleM(mTempMatrix, 0, mZScale, mZScale, mZScale);
         
@@ -729,24 +732,24 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
                 x -= mirrorWidth;
             }
             
-//            boolean print = event.getAction() == MotionEvent.ACTION_DOWN;
-//            if (print) Log.e("Lance", "x = " + x + " y = " + y);
+            boolean print = event.getAction() == MotionEvent.ACTION_DOWN;
+            if (print) Log.e("Lance", "x = " + x + " y = " + y);
             
             float nx = 2 * x / mirrorWidth - 1;
             float ny = 1 - 2 * y / mirrorHeight;
-//            if (print) Log.d("Lance", "nx = " + nx + " ny = " + ny);
+            if (print) Log.d("Lance", "nx = " + nx + " ny = " + ny);
             
             Matrix.invertM(mProjectionMatrixInv, 0, mProjectionMatrix, 0);
-            HVector eye = HMatrix.multiply(mProjectionMatrixInv, nx, ny, -1);
-//            if (print) Log.i("Lance", "eyex = " + eye.x + " eyey = " + eye.y + " eyez = " + eye.z);
+            HVector eye = HMatrix.multiply(mProjectionMatrixInv, nx, ny, mDefZ);
+            if (print) Log.i("Lance", "eyex = " + eye.x + " eyey = " + eye.y + " eyez = " + eye.z);
             
             Matrix.invertM(mViewMatrixInv, 0, mViewMatrix, 0);
-            HVector world = HMatrix.multiply(mViewMatrixInv, eye.x / (-eye.z), eye.y / (-eye.z), -1);
-//            if (print) Log.w("Lance", "worldx = " + world.x + " worldy = " + world.y + " worldz = " + world.z);
+            HVector world = HMatrix.multiply(mViewMatrixInv, eye.x * mDefZ / (eye.z), eye.y * mDefZ / (eye.z), mDefZ);
+            if (print) Log.w("Lance", "worldx = " + world.x + " worldy = " + world.y + " worldz = " + world.z);
             
             float outx = (0.5f + world.x/2) * mirrorWidth;
             float outy = (0.5f - world.y/2) * mirrorHeight;
-//            if (print) Log.e("Lance", "screenx = " + outx + " screeny = " + outy);
+            if (print) Log.e("Lance", "screenx = " + outx + " screeny = " + outy);
             event.setLocation(outx, outy);
             
             int action = event.getAction();
@@ -810,13 +813,14 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     
     private void updateCamera() {
     	if (mInclination.get() == null || mAzimuth.get() == null) {
+    		mCam.setLookAt(0, 0, -1);
     		return;
     	}
     	
     	mCamLookAt.x = 0;
-        mCamLookAt.y = 0;
-        mCamLookAt.z = -1;
-        HVector lookat = mCamLookAt;
+    	mCamLookAt.y = 0;
+    	mCamLookAt.z = -1;
+    	HVector lookat = mCamLookAt;
         
         float azimuth = mAzimuth.get().floatValue();
         float delAzimuth = (float)(azimuth - mInitAzimuth);
@@ -866,17 +870,17 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         // re-center inclination
         float inclination = mInclination.get().floatValue();
         delta = HMath.getSmallerAngle(inclination, mInitInclination);
-        if (Math.abs(delta) < 0.01f) {
-            mInitInclination = inclination;
-        } else {
-            double step = delta * mConfig.getSensorResetAcceleration();
-            double attemp = Math.abs(HMath.getSmallerAngle(inclination, HMath.clampBetweenZeroAnd2PI(mInitInclination + step)));
+//        if (Math.abs(delta) < 0.01f) {
+//            mInitInclination = inclination;
+//        } else {
+//            double step = delta * mConfig.getSensorResetAcceleration();
+//            double attemp = Math.abs(HMath.getSmallerAngle(inclination, HMath.clampBetweenZeroAnd2PI(mInitInclination + step)));
 //            if (attemp < delta) {
 //                mInitInclination += step;
 //            } else {
 //                mInitInclination -= step;
 //            }
-        }
+//        }
         mInitInclination = (float)HMath.clampBetweenZeroAnd2PI(mInitInclination);
         
         if (mInitAzimuthState != STATE_INVALID) {

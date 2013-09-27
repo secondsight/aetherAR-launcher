@@ -51,14 +51,15 @@ public class SensorFusion2 implements SensorEventListener {
     
     private int mScreenRotation;
     
+    // if there is Gravity sensor we prefer Gravity over accel
+    private boolean mHasGravity;
+    
     public SensorFusion2(Context context) {
         mContext = context;
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
         reset();
         
-
-        fuseTimer.scheduleAtFixedRate(new calculateFusedOrientationTask(),
-                                      10, TIME_CONSTANT);
+        fuseTimer.scheduleAtFixedRate(new calculateFusedOrientationTask(), 0, TIME_CONSTANT);
     }
     
     public float getAzimuth() {
@@ -113,10 +114,18 @@ public class SensorFusion2 implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
-            case Sensor.TYPE_GRAVITY:
-                // copy new accelerometer data into accel array and calculate orientation
-                System.arraycopy(event.values, 0, accel, 0, 3);
+        	case Sensor.TYPE_GRAVITY:
+        		System.arraycopy(event.values, 0, accel, 0, 3);
                 calculateAccMagOrientation();
+                mHasGravity = true;
+                break;
+        	
+            case Sensor.TYPE_ACCELEROMETER:
+            	if (!mHasGravity) {
+	                // copy new accelerometer data into accel array and calculate orientation
+	                System.arraycopy(event.values, 0, accel, 0, 3);
+	                calculateAccMagOrientation();
+            	}
                 break;
 
             case Sensor.TYPE_GYROSCOPE:
