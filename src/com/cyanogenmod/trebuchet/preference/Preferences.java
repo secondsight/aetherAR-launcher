@@ -127,7 +127,7 @@ public class Preferences extends PreferenceActivity
             addPreferencesFromResource(R.xml.preferences_3d_effect);
             
             SeekBarDialogPreference camPref = (SeekBarDialogPreference) findPreference("ui_3d_cam_position");
-            camPref.setMax((int)Util.getMaxScreenWidthInCM(getActivity().getResources()));
+            camPref.setMax((int)Util.getMaxScreenWidthInMM(getActivity().getResources()));
         }
     }
 

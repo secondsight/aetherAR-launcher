@@ -36,7 +36,7 @@ public class MirrorGLConfig {
     public float getCameraPosition() {
         int value = PreferencesProvider.Interface.Effect3D.getCameraDistance(
                 mResources.getInteger(R.integer.effect_3d_cam_position));
-        return value / Util.getMaxScreenWidthInCM(mResources);
+        return value / Util.getMaxScreenWidthInMM(mResources);
     }
     
     public int getCameraFOV() {

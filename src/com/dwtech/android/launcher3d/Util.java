@@ -75,13 +75,13 @@ public class Util {
         else return val;
     }
     
-    public static float getMaxScreenWidthInCM(Resources res) {
+    public static float getMaxScreenWidthInMM(Resources res) {
     	DisplayMetrics metrics = res.getDisplayMetrics();
     	int w = metrics.widthPixels;
     	int h = metrics.heightPixels;
     	w = Math.max(w, h);
     	int dpi = metrics.densityDpi;
     	int inchSize = w / dpi;
-    	return inchSize * 2.54f;
+    	return inchSize * 25.4f;
     }
 }
