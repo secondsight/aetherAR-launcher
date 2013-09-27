@@ -107,7 +107,7 @@
     
 <!-- 3D Effect -->
     <integer name="effect_3d_z_scale">80</integer>
-    <integer name="effect_3d_cam_rotation">50</integer>
+    <integer name="effect_3d_cam_rotation">0</integer>
     <integer name="effect_3d_cam_position">6</integer>
     <integer name="effect_3d_cam_fov">45</integer>
     <integer name="effect_3d_sensor_reset_acceleration">20</integer>

@@ -106,6 +106,8 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     private float[] mBgMatrix = new float[16];
     private float[] mBgMatrixFlipped = new float[16];
     private float[] mTempMatrix = new float[16];
+    private float[] mLeftViewMatrix = new float[16];
+    private float[] mRightViewMatrix = new float[16];
     
     private float mZScale = 1f;
     private float mCamRotate = 3f;
@@ -155,7 +157,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
     
     private SensorFusion2 mSensorFusion;
     private float mFOV = 45;
-    private float mDefZ = (float)(- 1 / Math.tan(mFOV/2 * Math.PI / 180));
+    private float mDefZ;
     
     public AppsGLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -183,6 +185,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mCamRotate = mConfig.getCameraRotation();
         mCamPosition = mConfig.getCameraPosition();
         mFOV = mConfig.getCameraFOV();
+        mDefZ = (float)(- 1 / Math.tan(mFOV/2 * Math.PI / 180));
         mPreferenceShader = mConfig.getShaderType();
         setBarrelDistortLevel(mConfig.getBarrelDistortLevel());
         int ordis = mConfig.getORDistortLevel();
@@ -541,6 +544,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mCam.update();
         float[] camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
+        System.arraycopy(mViewMatrix, 0, mLeftViewMatrix, 0, mViewMatrix.length);// for touch event
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
         GLES20.glUniformMatrix4fv(mvpHnd, 1, false, mMVPMatrix, 0);
         GLES20.glUniform1i(bg, 0);
@@ -570,6 +574,7 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
         mCam.update();
         camMat = mCam.getViewMatrix();
         Matrix.multiplyMM(mViewMatrix, 0, camMat, 0, mTempMatrix, 0);
+        System.arraycopy(mViewMatrix, 0, mRightViewMatrix, 0, mViewMatrix.length);// for touch event
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
         GLES20.glUniformMatrix4fv(mvpHnd, 1, false, mMVPMatrix, 0);
         GLES20.glUniform1i(bg, 0);
@@ -728,7 +733,9 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             float x = event.getX();
             float y = event.getY();
             
+            boolean isLeft = true;
             if (x > mirrorWidth) {
+            	isLeft = false;
                 x -= mirrorWidth;
             }
             
@@ -743,7 +750,8 @@ public class AppsGLSurfaceView extends GLSurfaceView implements Renderer, IMirro
             HVector eye = HMatrix.multiply(mProjectionMatrixInv, nx, ny, mDefZ);
             if (print) Log.i("Lance", "eyex = " + eye.x + " eyey = " + eye.y + " eyez = " + eye.z);
             
-            Matrix.invertM(mViewMatrixInv, 0, mViewMatrix, 0);
+            float[] viewMatrix = isLeft ? mLeftViewMatrix : mRightViewMatrix;
+            Matrix.invertM(mViewMatrixInv, 0, viewMatrix, 0);
             HVector world = HMatrix.multiply(mViewMatrixInv, eye.x * mDefZ / (eye.z), eye.y * mDefZ / (eye.z), mDefZ);
             if (print) Log.w("Lance", "worldx = " + world.x + " worldy = " + world.y + " worldz = " + world.z);
             
